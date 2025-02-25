@@ -10,8 +10,12 @@ load_dictionary <- function(filename){
 
 valid_list <- load_dictionary("valid")
 solution_list <- load_dictionary("solution")
-
 solution_list <- intersect(solution_list, valid_list)
+
+print("After each guess, you will receive feedback:")
+print("- *: Correct letter and correct position.")
+print("- #: Correct letter but wrong position.")
+print("- NO: Incorrect letter.")
 
 pick_solution <- function(solution_list){
   five_letter <- solution_list[nchar(solution_list)==5]
@@ -19,62 +23,61 @@ pick_solution <- function(solution_list){
   sep_letters <- strsplit(choice, split = "") [[1]]  
   return(sep_letters)
 }
-
 solution <- pick_solution(solution_list)
 
+evaluate_guess <- function(guess, solution){
+  feedback <- character(5)
+  for(i in 1:5){
+    if(guess[i] == solution[i]){
+      feedback[i] <- "*"
+    } else if(guess[i] %in% solution){
+      feedback[i] <- "#"
+    } else{
+      feedback[i] <- "NO"
+    }
+  }
+  return(feedback)
+}
+
+
 play_wordle <- function(solution, valid_list, num_guesses=6){
-  cat("You have", num_guesses, "chances to guess a 5-letter word.\n")
-  cat("After each guess, you will receive feedback:\n")
-  cat("- Green: Correct letter and correct position.\n")
-  cat("- Yellow: Correct letter but wrong position.\n")
-  cat("- Grey: Incorrect letter.\n\n")
+  print(paste("Number of guesses:", num_guesses))
   
   remaining_letters <- LETTERS
   guess_history <- list()
-  
-  evaluate_guess <- function(guess, solution){
-    feedback <- character(5)
-    for(i in 1:5){
-      if(guess[i] == solution[i]){
-        feedback[i] <- "green"
-      } else if(guess[i] %in% solution){
-        feedback[i] <- "yellow"
-      } else{
-        feedback[i] <- "grey"
-      }
-    }
-    return(feedback)
-  }
+  guess_num <- 0
   
   for(guess_num in 1:num_guesses){
-    cat("\nAttempt", guess_num, "of", num_guesses, "\n")
-    cat("Remaining letters:", paste(remaining_letters, collapse = " "), "\n")
+    print(paste("Attempt", guess_num, "of", num_guesses))
+    print(paste("Remaining letters:", paste(remaining_letters, collapse = " ")))
     guess <- readline(prompt = "Enter your guess:")
-    guess <- strsplit(guess, split = "")[[1]]
+    guessChr <- strsplit(guess, split = "")[[1]]
+    guess <- toupper(guessChr)
     
-    if(length(guess) !=5 || !(paste(guess, collapse = "") %in% valid_list)){
-      cat("Invalid guess! Please enter a 5-letter word.\n")
-      next
-    }
+    remaining_letters <-setdiff(remaining_letters, guessChr)
+
+    feedback <- evaluate_guess(guessChr, solution)
+    print(paste("Feedback: ", paste(feedback, collapse = " ")))
     
-    remaining_letters <-setdiff(remaining_letters, guess)
+    guess_history[[guess_num]] <-list(guessChr= paste(guessChr, collapse = ""), feedback=feedback)
     
-    feedback <- evaluate_guess(guess, solution)
-    cat("Feedback: ", paste(feedback, collapse = " "), "\n")
-    
-    guess_history[[guess_num]] <-list(guess= paste(guess, collapse = ""), feedback=feedback)
-    
-    if (paste(guess, collapse = "") == paste(solution, collapse = "")){
-      cat("Congratulations! You Won!\n")
+    if (paste(guessChr, collapse = "") == paste(solution, collapse = "")){
+      print("Congratulations! You Won!")
       for(i in 1:guess_num){
-        cat("Guess", i, ":", guess_history[[i]]$guess, "Feedback:", paste(guess_history[[i]]$feedback, collapse = " "), "\n")
+        print(paste("Guess", i, ":", paste(guess_history[[i]]$guessChr, collapse = ""), "Feedback:", paste(guess_history[[i]]$feedback, collapse = " ")))
       }
       return(invisible())
     }
   }
-  cat("\nSorry, you are out of guesses. The word was:", paste(solution, collapse = ""), "\n")
-  cat("Your guesses and feedback:\n")
+  
+  print(paste("Sorry, you are out of guesses. The word was:", paste(solution, collapse = "")))
+  print("Your guesses and feedback:")
   for(i in 1:num_guesses){
-    cat("Guess", i, ":", guess_history[[i]]$guess, "Feedback:", paste(guess_history[[i]]$feedback, collapse = " "), "\n")
+    print(paste("Guess", i, ":", guess_history[[i]]$guess, "Feedback:", paste(guess_history[[i]]$feedback, collapse = " ")))
   }
 }
+print("Starting the game...")
+print(play_wordle(solution, valid_list, num_guesses = 6))
+
+
+
